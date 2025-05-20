@@ -5,7 +5,6 @@ import openai
 
 openai.api_key = st.secrets["openai"]["api_key"]
 
-
 st.set_page_config(page_title="Safety Observation Mockup", page_icon="📸", layout="centered")
 
 st.title("Safety Observation Mockup")
@@ -18,7 +17,6 @@ if "description" not in st.session_state:
     st.session_state["description"] = ""
 if "submitted" not in st.session_state:
     st.session_state["submitted"] = False
-
 
 CATEGORIES = [
     "Housekeeping",
@@ -46,9 +44,7 @@ def analyze_photo(image_bytes: bytes):
                             "Look at the photo and select the most relevant safety observation "
                             f"category from this list: {cat_list}. "
                             "Write one short observation sentence. "
-                            "Reply in two lines: 'Category: <category>' and 'Observation: <text>'."
-                            "Identify any workplace safety observation shown in the photo."
-                            " Respond with JSON containing 'category' and 'description'."
+                            "Respond with JSON containing 'category' and 'description'."
                         ),
                     },
                     {
@@ -60,29 +56,30 @@ def analyze_photo(image_bytes: bytes):
         ],
     )
     content = response.choices[0].message.content
-    category = ""
-    description = ""
-    for line in content.splitlines():
-        if line.lower().startswith("category:"):
-            category = line.split(":", 1)[1].strip()
-        elif line.lower().startswith("observation:"):
-            description = line.split(":", 1)[1].strip()
-    return category, description
     try:
         data = json.loads(content)
-        return data.get("category", ""), data.get("description", "")
+        category = data.get("category", "")
+        description = data.get("description", "")
     except json.JSONDecodeError:
-        # Fallback if the model does not return valid JSON
-        return "", content
+        category = ""
+        description = ""
+        for line in content.splitlines():
+            if line.lower().startswith("category:"):
+                category = line.split(":", 1)[1].strip()
+            elif line.lower().startswith("observation:"):
+                description = line.split(":", 1)[1].strip()
+        if not description:
+            description = content
+    return category, description
 
 
 if not st.session_state["submitted"]:
     uploaded = st.file_uploader("Upload safety photo", type=["jpg", "jpeg", "png"])
 
-   st.info("Available categories: " + ", ".join(CATEGORIES))
-    if uploaded:
+    st.info("Available categories: " + ", ".join(CATEGORIES))
 
-      st.image(uploaded, caption="Uploaded photo", use_column_width=True)
+    if uploaded:
+        st.image(uploaded, caption="Uploaded photo", use_column_width=True)
         if st.button("Generate Observation"):
             category, description = analyze_photo(uploaded.read())
             st.session_state["category"] = category
@@ -90,13 +87,6 @@ if not st.session_state["submitted"]:
 
     if st.session_state["category"] or st.session_state["description"]:
         st.selectbox("Category", options=CATEGORIES, key="category")
-    if uploaded and st.button("Generate Observation"):
-        category, description = analyze_photo(uploaded.read())
-        st.session_state["category"] = category
-        st.session_state["description"] = description
-
-    if st.session_state["category"] or st.session_state["description"]:
-        st.text_input("Category", key="category")
         st.text_area("Observation", key="description")
         if st.button("Submit to Safety System"):
             st.session_state["submitted"] = True
