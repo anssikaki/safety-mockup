@@ -5,6 +5,7 @@ import openai
 
 openai.api_key = st.secrets["openai"]["api_key"]
 
+
 st.set_page_config(page_title="Safety Observation Mockup", page_icon="📸", layout="centered")
 
 st.title("Safety Observation Mockup")
@@ -32,6 +33,7 @@ def analyze_photo(image_bytes: bytes):
     """Send image bytes to the OpenAI API and return category and description."""
     b64_image = base64.b64encode(image_bytes).decode("utf-8")
     cat_list = ", ".join(CATEGORIES)
+
     response = openai.chat.completions.create(
         model="gpt-4o",
         messages=[
@@ -45,6 +47,8 @@ def analyze_photo(image_bytes: bytes):
                             f"category from this list: {cat_list}. "
                             "Write one short observation sentence. "
                             "Reply in two lines: 'Category: <category>' and 'Observation: <text>'."
+                            "Identify any workplace safety observation shown in the photo."
+                            " Respond with JSON containing 'category' and 'description'."
                         ),
                     },
                     {
@@ -64,13 +68,21 @@ def analyze_photo(image_bytes: bytes):
         elif line.lower().startswith("observation:"):
             description = line.split(":", 1)[1].strip()
     return category, description
+    try:
+        data = json.loads(content)
+        return data.get("category", ""), data.get("description", "")
+    except json.JSONDecodeError:
+        # Fallback if the model does not return valid JSON
+        return "", content
 
 
 if not st.session_state["submitted"]:
     uploaded = st.file_uploader("Upload safety photo", type=["jpg", "jpeg", "png"])
-    st.info("Available categories: " + ", ".join(CATEGORIES))
+
+   st.info("Available categories: " + ", ".join(CATEGORIES))
     if uploaded:
-        st.image(uploaded, caption="Uploaded photo", use_column_width=True)
+
+      st.image(uploaded, caption="Uploaded photo", use_column_width=True)
         if st.button("Generate Observation"):
             category, description = analyze_photo(uploaded.read())
             st.session_state["category"] = category
@@ -78,6 +90,13 @@ if not st.session_state["submitted"]:
 
     if st.session_state["category"] or st.session_state["description"]:
         st.selectbox("Category", options=CATEGORIES, key="category")
+    if uploaded and st.button("Generate Observation"):
+        category, description = analyze_photo(uploaded.read())
+        st.session_state["category"] = category
+        st.session_state["description"] = description
+
+    if st.session_state["category"] or st.session_state["description"]:
+        st.text_input("Category", key="category")
         st.text_area("Observation", key="description")
         if st.button("Submit to Safety System"):
             st.session_state["submitted"] = True
