@@ -2,7 +2,8 @@
 
 This project demonstrates a simple Streamlit application that uses the OpenAI API to create workplace safety observations from photos.
 
-Users can upload an image and the app will ask the GPT‑4o model to identify the safety category and generate a description. The suggested values can be edited before submitting the mock observation. After submission a thank you message is displayed.
+Users can upload an image and the app will ask the GPT‑4o model to identify the most relevant safety category and generate a short observation. The suggested values can be edited before submitting the mock observation. After submission a thank you message is displayed.
+=======
 
 ## Requirements
 
@@ -31,7 +32,8 @@ Launch Streamlit from the repository root:
 streamlit run safety-mockup.py
 ```
 
-The UI allows you to upload a photo, generate a suggested category and description, adjust the fields, and submit the mock safety observation.
+The UI allows you to upload a photo, generate a suggested category and description, adjust the fields, and submit the mock safety observation. The available categories are Housekeeping, PPE Compliance, Equipment Safety, Fire Safety and Ergonomics.
+=======
 
 ## How it works
 
